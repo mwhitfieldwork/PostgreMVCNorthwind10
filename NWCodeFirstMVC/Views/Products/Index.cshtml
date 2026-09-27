@@ -1,0 +1,22 @@
+﻿@model IEnumerable<NWCodeFirstMVC.Domain.PocoModels.ProductModel>
+@{
+    ViewData["Title"] = "View";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Product List</h1>
+
+<table>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ProductName</td>
+                <td>@item.UnitPrice</td>
+                <td>@item.QuantityPerUnit</td>
+                <td>@item.UnitsInStock</td>
+                <td>@item.Discontinued</td>
+            </tr>
+        }
+    </tbody>
+</table>
