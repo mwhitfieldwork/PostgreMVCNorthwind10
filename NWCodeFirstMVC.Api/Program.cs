@@ -61,6 +61,7 @@ builder.Services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<ICsvService, CsvService>();
+builder.Services.AddScoped<NWCodeFirstMVC.Api.Agents.RestockAgent>();
 
 
 builder.Services.AddAutoMapper(typeof(MapperConfig));
