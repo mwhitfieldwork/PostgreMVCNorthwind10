@@ -19,7 +19,11 @@ namespace NWCodeFirstMVC.Infrastructure.Services
 
             foreach (var p in products)
             {
-                sb.AppendLine($"{p.ProductName},{p.QuantityPerUnit},{p.UnitPrice},{p.UnitsInStock}");
+                // Quotes around the name keep commas inside it from breaking the columns.
+                var name = (p.ProductName ?? "").Replace("\"", "\"\"");
+                var qty = (p.QuantityPerUnit ?? "").Replace("\"", "\"\"");
+
+                sb.AppendLine($"{p.ProductId},\"{name}\",\"{qty}\",{p.UnitPrice},{p.UnitsInStock}");
             }
 
             return Encoding.UTF8.GetBytes(sb.ToString());
