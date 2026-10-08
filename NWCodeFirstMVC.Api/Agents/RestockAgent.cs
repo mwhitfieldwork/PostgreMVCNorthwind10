@@ -393,6 +393,59 @@ public class RestockAgent
                 return JsonSerializer.Serialize(ranked.Take(count));
             }, ct),
         };
+
+        // Names of the other tools, so the email shows what the agent had to work with.
+        var otherToolNames = string.Join(", ",
+            new[] { lowStockTool, priceRankTool, lateOrdersTool, bestSellersTool, emailLowStockTool, vendorRegionsTool }
+                .Select(t => t.Name));
+
+        var unansweredTool = new BetaRunnableTool
+        {
+            Name = "report_unanswered_question",
+            Definition = new BetaTool
+            {
+                Name = "report_unanswered_question",
+                Description = "Emails the store owner a question you couldn't answer with your other tools, " +
+                              "so a tool can be added for it later. Use only when no other tool can answer.",
+                InputSchema = new InputSchema
+                {
+                    Properties = new Dictionary<string, JsonElement>
+                    {
+                        ["reason"] = JsonSerializer.SerializeToElement(new
+                        {
+                            type = "string",
+                            description = "A short reason why you couldn't answer the question."
+                        }),
+                    },
+                    Required = ["reason"],
+                },
+            },
+            Run = async (toolUse, ct) =>
+            {
+                if (string.IsNullOrWhiteSpace(_reportEmail))
+                    return "No report email is configured, so nothing was sent.";
+
+                var reason = toolUse.Input.TryGetValue("reason", out var r) ? r.GetString() : "No reason given";
+
+                var body = "<h2>Unanswered question</h2>" +
+                           $"<p><strong>Question:</strong> {WebUtility.HtmlEncode(question)}</p>" +
+                           $"<p><strong>Why:</strong> {WebUtility.HtmlEncode(reason)}</p>" +
+                           $"<p><strong>When:</strong> {DateTime.UtcNow:MMM d, yyyy h:mm tt} UTC</p>" +
+                           $"<p><strong>Tools it had:</strong> {otherToolNames}</p>";
+
+                try
+                {
+                    await _email.SendEmailAsync(_reportEmail, "Northwind agent: unanswered question", body);
+                    return "Question reported.";
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unanswered-question email failed: {ex.Message}");
+                    return $"The report failed to send: {ex.Message}";
+                }
+            },
+        };
+
         // The runner handles the loop: Claude asks for a tool, we run it, Claude answers.
         var runner = _client.Beta.Messages.ToolRunner(
             new MessageCreateParams
@@ -400,10 +453,14 @@ public class RestockAgent
                 Model = "claude-haiku-4-5",
                 MaxTokens = 1024,
                 System = "You are a restock assistant for the Northwind store. " +
-                         "Use your tools to check real inventory data. Never guess numbers.",
+                 "Use your tools to check real inventory data. Never guess numbers. " +
+                 "If the user asks something you can't answer with your tools, don't guess. " +
+                 "Call report_unanswered_question with the question and a short reason why " +
+                 "you couldn't answer it. Then tell the user: " +
+                 "\"I can't answer that yet, but I've passed your question along.\"",
                 Messages = [new() { Role = Role.User, Content = question }],
             },
-            [lowStockTool, priceRankTool, lateOrdersTool, bestSellersTool, emailLowStockTool, vendorRegionsTool]
+            [lowStockTool, priceRankTool, lateOrdersTool, bestSellersTool, emailLowStockTool, vendorRegionsTool, unansweredTool]
         );
 
         var answer = "";
