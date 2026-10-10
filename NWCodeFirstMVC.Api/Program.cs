@@ -12,6 +12,8 @@ using NWCodeFirstMVC.Infrastructure;
 using NWCodeFirstMVC.Api.Converters;
 using NWCodeFirstMVC.Infrastructure.Mapping;
 using NWCodeFirstMVC.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,12 +64,31 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<ICsvService, CsvService>();
 builder.Services.AddScoped<NWCodeFirstMVC.Api.Agents.RestockAgent>();
+builder.Services.AddSingleton<ITokenService, TokenService>();
 
 
 builder.Services.AddAutoMapper(typeof(MapperConfig));
 builder.Services.AddAutoMapper(typeof(ProductMappingProfile));
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false; // keep claim names like "email" as-is
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Convert.FromBase64String(builder.Configuration["Jwt:Key"]!))
+        };
+    });
 
+builder.Services.AddAuthorization();
 
 
 NLog.LogManager.Setup().LoadConfiguration(builder =>
@@ -83,6 +104,7 @@ app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 
