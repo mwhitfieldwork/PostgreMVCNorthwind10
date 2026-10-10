@@ -1,5 +1,6 @@
 ﻿using Anthropic;
 using Anthropic.Models.Messages;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,13 +41,17 @@ namespace NWCodeFirstMVC.Api.Controllers
 
             return Ok(reply);
         }
-
+        [Authorize]
         [HttpPost("ask")]
         public async Task<IActionResult> Ask(
-            [FromBody] AskRequest request,
-            [FromServices] NWCodeFirstMVC.Api.Agents.RestockAgent agent)
+        [FromBody] AskRequest request,
+        [FromServices] NWCodeFirstMVC.Api.Agents.RestockAgent agent)
         {
-            var answer = await agent.AskAsync(request.Question);
+            var email = User.FindFirst("email")?.Value;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized("No email found in your login token.");
+
+            var answer = await agent.AskAsync(request.Question, email);
             return Ok(answer);
         }
     }

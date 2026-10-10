@@ -40,7 +40,7 @@ public class RestockAgent
         _reportEmail = config["Agent:ReportEmail"];
     }
 
-    public async Task<string> AskAsync(string question)
+    public async Task<string> AskAsync(string question,string userEmail)
     {
 
         // The tool: a name + description Claude reads, and the C# code that runs.
@@ -246,8 +246,8 @@ public class RestockAgent
             {
                 Name = "email_lowest_stock_report",
                 Description = "Finds the active products with the fewest units in stock, builds a CSV " +
-                              "of them, and emails it to the store owner with the list in the email body. " +
-                              "Use when the user wants to order or restock the lowest items.",
+              "of them, and emails it to the logged-in user with the list in the email body. " +
+              "Use when the user wants to order or restock the lowest items.",
                 InputSchema = new InputSchema
                 {
                     Properties = new Dictionary<string, JsonElement>
@@ -262,7 +262,7 @@ public class RestockAgent
             },
             Run = async (toolUse, ct) => await OneAtATime(async () =>
             {
-                if (string.IsNullOrWhiteSpace(_reportEmail))
+                if (string.IsNullOrWhiteSpace(userEmail))
                     return "No report email is configured, so nothing was sent.";
 
                 var count = toolUse.Input.TryGetValue("count", out var c) && c.TryGetInt32(out var n) ? n : 3;
@@ -299,7 +299,7 @@ public class RestockAgent
                 try
                 {
                     await _email.SendEmailAsync(
-                        _reportEmail,
+                        userEmail,
                         $"Northwind restock list ({DateTime.Now:MMM d})",
                         body,
                         csvBytes,

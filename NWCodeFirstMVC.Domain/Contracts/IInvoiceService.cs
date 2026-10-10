@@ -5,6 +5,6 @@ namespace NWCodeFirstMVC.Domain.Contracts
 {
     public interface IInvoiceService
     {
-        Task SendInvoiceAsync(InvoiceRequestDto invoice);
+        Task SendInvoiceAsync(string email, List<int> productIds);
     }
 }
