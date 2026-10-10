@@ -18,9 +18,11 @@ namespace NWCodeFirstMVC.Infrastructure.Services
     public class LoginService : GenericService<User>, ILoginService
     {
         private readonly PgNwContext _dc;
-        public LoginService(PgNwContext dc) : base(dc)
+        private readonly ITokenService _tokenService;
+        public LoginService(PgNwContext dc, ITokenService tokenService) : base(dc)
         {
             this._dc = dc;
+            _tokenService = tokenService;
         }
         [HttpPost]
         public async Task<IActionResult> Authenticate(User userModel)
@@ -40,11 +42,16 @@ namespace NWCodeFirstMVC.Infrastructure.Services
                 return new UnauthorizedObjectResult("Invalid username or password.");
             }
 
+            var token = _tokenService.CreateToken(
+                userDetails.Pkid.ToString(),
+                userDetails.Username,
+                userDetails.Firstname);
+
             return new OkObjectResult(new
             {
                 Message = "Authentication successful.",
-                User = userDetails
-                // Token = token // Uncomment if a token is generated
+                User = userDetails,
+                Token = token
             });
 
         }
@@ -75,10 +82,16 @@ namespace NWCodeFirstMVC.Infrastructure.Services
 
             await _dc.SaveChangesAsync();
 
+            var token = _tokenService.CreateToken(
+                userDetails.Pkid.ToString(),
+                userDetails.Username,
+                userDetails.Firstname);
+
             return new OkObjectResult(new
             {
                 Message = "Authentication successful.",
-                User = userDetails
+                User = userDetails,
+                Token = token
             });
         }
 
