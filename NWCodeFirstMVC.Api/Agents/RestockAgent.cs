@@ -40,8 +40,10 @@ public class RestockAgent
         _reportEmail = config["Agent:ReportEmail"];
     }
 
-    public async Task<string> AskAsync(string question,string userEmail)
+    public async Task<string> AskAsync(List<ChatTurn> history, string userEmail)
     {
+        // The newest user message. The unanswered-question email still uses this.
+        var question = history.LastOrDefault(t => t.From == "user")?.Text ?? "";
 
         // The tool: a name + description Claude reads, and the C# code that runs.
         var lowStockTool = new BetaRunnableTool
@@ -318,6 +320,54 @@ public class RestockAgent
             }, ct),
         };
 
+
+        var findProductTool = new BetaRunnableTool
+        {
+            Name = "find_product",
+            Definition = new BetaTool
+            {
+                Name = "find_product",
+                Description = "Looks up products by name (partial match, not case-sensitive) and returns " +
+                              "their stock, units on order, reorder level, price and packaging.",
+                InputSchema = new InputSchema
+                {
+                    Properties = new Dictionary<string, JsonElement>
+                    {
+                        ["name"] = JsonSerializer.SerializeToElement(new
+                        {
+                            type = "string",
+                            description = "All or part of the product name, e.g. 'hot dog' or 'Mike'"
+                        }),
+                    },
+                    Required = ["name"],
+                },
+            },
+            Run = async (toolUse, ct) => await OneAtATime(async () =>
+            {
+                var name = toolUse.Input.TryGetValue("name", out var n) ? n.GetString() ?? "" : "";
+                if (string.IsNullOrWhiteSpace(name))
+                    return "No product name was given.";
+
+                var items = await _db.Products
+                    .Where(p => !p.IsDeleted && EF.Functions.ILike(p.ProductName, $"%{name}%"))
+                    .Take(10)
+                    .Select(p => new {
+                        p.ProductName,
+                        p.UnitsInStock,
+                        p.UnitsOnOrder,
+                        p.ReorderLevel,
+                        p.UnitPrice,
+                        p.QuantityPerUnit,
+                        p.Discontinued
+                    })
+                    .ToListAsync(ct);
+
+                return items.Count == 0
+                    ? $"No products found matching '{name}'."
+                    : JsonSerializer.Serialize(items);
+            }, ct),
+        };
+
         var vendorRegionsTool = new BetaRunnableTool
         {
             Name = "get_vendor_success_by_country",
@@ -396,7 +446,7 @@ public class RestockAgent
 
         // Names of the other tools, so the email shows what the agent had to work with.
         var otherToolNames = string.Join(", ",
-            new[] { lowStockTool, priceRankTool, lateOrdersTool, bestSellersTool, emailLowStockTool, vendorRegionsTool }
+            new[] { lowStockTool, priceRankTool, lateOrdersTool, bestSellersTool, emailLowStockTool, vendorRegionsTool, findProductTool }
                 .Select(t => t.Name));
 
         var unansweredTool = new BetaRunnableTool
@@ -405,8 +455,9 @@ public class RestockAgent
             Definition = new BetaTool
             {
                 Name = "report_unanswered_question",
-                Description = "Emails the store owner a question you couldn't answer with your other tools, " +
-                              "so a tool can be added for it later. Use only when no other tool can answer.",
+                Description = "ALWAYS call this when the user asks for something your other tools " +
+              "can't answer (for example, questions about customers or employees). " +
+              "Call it BEFORE replying. Do not ask the user for permission first.",
                 InputSchema = new InputSchema
                 {
                     Properties = new Dictionary<string, JsonElement>
@@ -454,13 +505,24 @@ public class RestockAgent
                 MaxTokens = 1024,
                 System = "You are a restock assistant for the Northwind store. " +
                  "Use your tools to check real inventory data. Never guess numbers. " +
-                 "If the user asks something you can't answer with your tools, don't guess. " +
-                 "Call report_unanswered_question with the question and a short reason why " +
-                 "you couldn't answer it. Then tell the user: " +
-                 "\"I can't answer that yet, but I've passed your question along.\"",
-                Messages = [new() { Role = Role.User, Content = question }],
+                 "If none of your tools can answer the question, do not ask follow-up questions. " +
+                 "Instead, call report_unanswered_question right away with the question " +
+                 "and a short reason why you couldn't answer it. Then tell the user: " +
+                 "\"I can't answer that yet, but I've passed your question along.\" + " +
+                 "If the user says a number is different from what your tools returned, " +
+                 "don't just accept it. Say what your tool shows, and call report_unanswered_question " +
+                 "with the reason 'data mismatch'.",
+                Messages = history
+                .TakeLast(20)                         // keep cost down on long chats
+                .SkipWhile(t => t.From != "user")     // Claude needs the first message to be from the user
+                .Select(t => new BetaMessageParam
+                {
+                    Role = t.From == "user" ? Role.User : Role.Assistant,
+                    Content = t.Text
+                })
+                .ToList(),
             },
-            [lowStockTool, priceRankTool, lateOrdersTool, bestSellersTool, emailLowStockTool, vendorRegionsTool, unansweredTool]
+            [lowStockTool, priceRankTool, lateOrdersTool, bestSellersTool, emailLowStockTool, vendorRegionsTool, findProductTool, unansweredTool]
         );
 
         var answer = "";
@@ -478,3 +540,5 @@ public class RestockAgent
     }
 
 }
+
+public record ChatTurn(string From, string Text);

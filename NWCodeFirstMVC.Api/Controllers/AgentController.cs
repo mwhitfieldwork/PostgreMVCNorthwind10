@@ -3,6 +3,7 @@ using Anthropic.Models.Messages;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 
 namespace NWCodeFirstMVC.Api.Controllers
 {
@@ -41,19 +42,21 @@ namespace NWCodeFirstMVC.Api.Controllers
 
             return Ok(reply);
         }
+
         [Authorize]
         [HttpPost("ask")]
         public async Task<IActionResult> Ask(
-        [FromBody] AskRequest request,
-        [FromServices] NWCodeFirstMVC.Api.Agents.RestockAgent agent)
+            [FromBody] AskRequest request,
+            [FromServices] NWCodeFirstMVC.Api.Agents.RestockAgent agent)
         {
-            var email = User.FindFirst("email")?.Value;
-            if (string.IsNullOrWhiteSpace(email))
-                return Unauthorized("No email found in your login token.");
+            if (request.Messages is null || request.Messages.Count == 0)
+                return BadRequest("No messages sent.");
 
-            var answer = await agent.AskAsync(request.Question, email);
+            var email = User.FindFirst("email")?.Value ?? "";
+
+            var answer = await agent.AskAsync(request.Messages, email);
             return Ok(answer);
         }
     }
 }
-public record AskRequest(string Question);
+public record AskRequest(List<NWCodeFirstMVC.Api.Agents.ChatTurn> Messages);
