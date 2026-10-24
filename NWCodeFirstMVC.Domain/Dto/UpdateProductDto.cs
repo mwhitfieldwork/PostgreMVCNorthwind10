@@ -18,6 +18,8 @@ namespace NWCodeFirstMVC.Domain.Dto
         [DataMember]
         public Nullable<decimal> UnitPrice { get; set; }
         [DataMember]
+        public Nullable<short> UnitsInStock { get; set; }
+        [DataMember]
         public Nullable<int> CategoryID { get; set; }
     }
 }
