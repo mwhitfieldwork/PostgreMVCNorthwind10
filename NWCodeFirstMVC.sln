@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.3.32929.385
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12217.157 stable
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NWCodeFirstMVC", "NWCodeFirstMVC\NWCodeFirstMVC.csproj", "{FA051110-9FA0-4DBE-8D8F-0119D43C9DCB}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NwCodeFirstMVC.Data", "NwCodeFirstMVC.Data\NwCodeFirstMVC.Data.csproj", "{6D8B0E4C-B5F8-44B3-A851-5E1B79924CC3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NWCodeFirstMVC.Domain", "NWCodeFirstMVC.Domain\NWCodeFirstMVC.Domain.csproj", "{0AA95647-FAA5-4BE4-9E8B-C81BF17F858C}"
@@ -21,10 +19,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FA051110-9FA0-4DBE-8D8F-0119D43C9DCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FA051110-9FA0-4DBE-8D8F-0119D43C9DCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FA051110-9FA0-4DBE-8D8F-0119D43C9DCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FA051110-9FA0-4DBE-8D8F-0119D43C9DCB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6D8B0E4C-B5F8-44B3-A851-5E1B79924CC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6D8B0E4C-B5F8-44B3-A851-5E1B79924CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6D8B0E4C-B5F8-44B3-A851-5E1B79924CC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
