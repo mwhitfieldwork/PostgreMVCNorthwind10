@@ -31,6 +31,11 @@ namespace NWCodeFirstMVC.Infrastructure
         public virtual DbSet<Supplier> Suppliers { get; set; } = null!;
         public virtual DbSet<Territory> Territories { get; set; } = null!;
         public virtual DbSet<UsState> UsStates { get; set; } = null!;
+        // The product_sales_candles table (weekly candlestick data for the dashboard chart)
+        public virtual DbSet<ProductSalesCandle> ProductSalesCandles { get; set; }
+
+        // The weekly_sales_candles table (all sales combined, for the dashboard chart)
+        public virtual DbSet<WeeklySalesCandle> WeeklySalesCandles { get; set; }
         public DbSet<User> Users { get; set; }
 
 
@@ -535,6 +540,62 @@ namespace NWCodeFirstMVC.Infrastructure
                     .HasColumnName("occupation");
                 entity.Property(e => e.Picture)
                     .HasColumnName("picture");
+            });
+
+
+            // WHAT: Table setup for weekly product candles
+            // WHY:  Matches the snake_case naming the rest of Northwind uses,
+            //       and enforces one candle per product per week
+            modelBuilder.Entity<ProductSalesCandle>(entity =>
+            {
+                entity.ToTable("product_sales_candles");
+
+                // Primary key
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                // Columns
+                entity.Property(e => e.ProductId).HasColumnName("product_id");
+                entity.Property(e => e.WeekStart).HasColumnName("week_start");
+
+                // numeric(12,2) = up to 10 digits before the decimal, 2 after (money style)
+                entity.Property(e => e.Open).HasColumnName("open").HasPrecision(12, 2);
+                entity.Property(e => e.High).HasColumnName("high").HasPrecision(12, 2);
+                entity.Property(e => e.Low).HasColumnName("low").HasPrecision(12, 2);
+                entity.Property(e => e.Close).HasColumnName("close").HasPrecision(12, 2);
+
+                // Unique rule: a product can only have one candle per week.
+                // Also speeds up date-range lookups.
+                entity.HasIndex(e => new { e.ProductId, e.WeekStart }).IsUnique();
+
+                // Foreign key: each candle belongs to one product.
+                // If a product is deleted, its candles are deleted too.
+                entity.HasOne(e => e.Product)
+                      .WithMany()
+                      .HasForeignKey(e => e.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+            // WHAT: Table setup for weekly candles (all products combined)
+            // WHY:  Matches Northwind's snake_case naming, and enforces one candle per week
+            modelBuilder.Entity<WeeklySalesCandle>(entity =>
+            {
+                entity.ToTable("weekly_sales_candles");
+
+                // Primary key
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                // Columns
+                entity.Property(e => e.WeekStart).HasColumnName("week_start");
+                entity.Property(e => e.Open).HasColumnName("open").HasPrecision(12, 2);
+                entity.Property(e => e.High).HasColumnName("high").HasPrecision(12, 2);
+                entity.Property(e => e.Low).HasColumnName("low").HasPrecision(12, 2);
+                entity.Property(e => e.Close).HasColumnName("close").HasPrecision(12, 2);
+
+                // Unique rule: only one candle per week (also speeds up date lookups)
+                entity.HasIndex(e => e.WeekStart).IsUnique();
             });
 
             OnModelCreatingPartial(modelBuilder);

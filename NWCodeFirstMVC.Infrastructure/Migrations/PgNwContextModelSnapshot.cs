@@ -17,7 +17,7 @@ namespace NWCodeFirstMVC.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.10")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -374,8 +374,11 @@ namespace NWCodeFirstMVC.Infrastructure.Migrations
             modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.Product", b =>
                 {
                     b.Property<short>("ProductId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
                         .HasColumnName("product_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("ProductId"));
 
                     b.Property<short?>("CategoryId")
                         .HasColumnType("smallint")
@@ -429,6 +432,51 @@ namespace NWCodeFirstMVC.Infrastructure.Migrations
                     b.HasIndex("SupplierId");
 
                     b.ToTable("products", (string)null);
+                });
+
+            modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.ProductSalesCandle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Close")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("close");
+
+                    b.Property<decimal>("High")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("high");
+
+                    b.Property<decimal>("Low")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("low");
+
+                    b.Property<decimal>("Open")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("open");
+
+                    b.Property<short>("ProductId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateOnly>("WeekStart")
+                        .HasColumnType("date")
+                        .HasColumnName("week_start");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId", "WeekStart")
+                        .IsUnique();
+
+                    b.ToTable("product_sales_candles", (string)null);
                 });
 
             modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.Region", b =>
@@ -570,6 +618,33 @@ namespace NWCodeFirstMVC.Infrastructure.Migrations
                     b.ToTable("territories", (string)null);
                 });
 
+            modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.UsState", b =>
+                {
+                    b.Property<short>("StateId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("state_id");
+
+                    b.Property<string>("StateAbbr")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("state_abbr");
+
+                    b.Property<string>("StateName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("state_name");
+
+                    b.Property<string>("StateRegion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("state_region");
+
+                    b.HasKey("StateId")
+                        .HasName("pk_usstates");
+
+                    b.ToTable("us_states", (string)null);
+                });
+
             modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.User", b =>
                 {
                     b.Property<int>("Pkid")
@@ -611,31 +686,45 @@ namespace NWCodeFirstMVC.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.UsState", b =>
+            modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.WeeklySalesCandle", b =>
                 {
-                    b.Property<short>("StateId")
-                        .HasColumnType("smallint")
-                        .HasColumnName("state_id");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
-                    b.Property<string>("StateAbbr")
-                        .HasMaxLength(2)
-                        .HasColumnType("character varying(2)")
-                        .HasColumnName("state_abbr");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("StateName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("state_name");
+                    b.Property<decimal>("Close")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("close");
 
-                    b.Property<string>("StateRegion")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("state_region");
+                    b.Property<decimal>("High")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("high");
 
-                    b.HasKey("StateId")
-                        .HasName("pk_usstates");
+                    b.Property<decimal>("Low")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("low");
 
-                    b.ToTable("us_states", (string)null);
+                    b.Property<decimal>("Open")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("open");
+
+                    b.Property<DateOnly>("WeekStart")
+                        .HasColumnType("date")
+                        .HasColumnName("week_start");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WeekStart")
+                        .IsUnique();
+
+                    b.ToTable("weekly_sales_candles", (string)null);
                 });
 
             modelBuilder.Entity("CustomerCustomerDemo", b =>
@@ -736,6 +825,17 @@ namespace NWCodeFirstMVC.Infrastructure.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.ProductSalesCandle", b =>
+                {
+                    b.HasOne("NWCodeFirstMVC.Infrastructure.PgModels.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("NWCodeFirstMVC.Infrastructure.PgModels.Territory", b =>
