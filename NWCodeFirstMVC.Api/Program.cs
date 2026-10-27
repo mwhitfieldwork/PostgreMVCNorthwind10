@@ -1,19 +1,20 @@
-using Microsoft.EntityFrameworkCore;
-using NWCodeFirstMVC.Domain.Contracts;
-using NWCodeFirstMVC.Infrastructure.Services;
-using NWCodeFirstMVC.Domain.Contracts;
-using NWCodeFirstMVC.Domain;
-using NwCodeFirstMVC.Data;
-using NWCodeFirstMVC.Domain;
-using NLog;
-using NWCodeFirstMVC.Api.Configurations;
 using AutoMapper;
-using NWCodeFirstMVC.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using NLog;
+using NwCodeFirstMVC.Data;
+using NWCodeFirstMVC.Api.Configurations;
 using NWCodeFirstMVC.Api.Converters;
+using NWCodeFirstMVC.Domain;
+using NWCodeFirstMVC.Domain;
+using NWCodeFirstMVC.Domain.Contracts;
+using NWCodeFirstMVC.Domain.Contracts;
+using NWCodeFirstMVC.Infrastructure;
 using NWCodeFirstMVC.Infrastructure.Mapping;
 using NWCodeFirstMVC.Infrastructure.Repositories;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using NWCodeFirstMVC.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +46,36 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// WHAT: Adds an "Authorize" button to Swagger so you can test [Authorize] endpoints
+// WHY:  Without it, Swagger can't send your JWT, so protected endpoints return 401
+// HOW:  Tells Swagger the API uses "Bearer <token>" in the Authorization header
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste your JWT token (no 'Bearer ' needed)"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 
 builder.Services.AddScoped<ILoginService, LoginService>();
