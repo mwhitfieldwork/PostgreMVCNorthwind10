@@ -21,5 +21,7 @@ namespace NWCodeFirstMVC.Domain.Dto
         public Nullable<short> UnitsInStock { get; set; }
         [DataMember]
         public Nullable<int> CategoryID { get; set; }
+        [DataMember]
+        public short? ReorderLevel { get; set; }
     }
 }
