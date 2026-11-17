@@ -42,5 +42,17 @@ namespace NWCodeFirstMVC.Api.Controllers
             if (dto == null) return NotFound();
             return Ok(dto);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] AdminUserDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != dto.Pkid) return BadRequest("Invalid ID");
+
+            var updated = await _adminService.UpdateAsync(id, dto);
+            if (updated == null) return NotFound();
+
+            return Ok(updated);   // send the saved user back, so the front end can refresh its row
+        }
     }
 }
