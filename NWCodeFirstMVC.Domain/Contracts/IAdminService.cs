@@ -13,5 +13,6 @@ namespace NWCodeFirstMVC.Domain.Contracts
         Task<List<User>> GetAllAsync();
         Task<AdminUserDto> GetByIdAsync(int id);
         Task<AdminUserDto> CreateAsync(AdminUserDto dto);
+        Task<AdminUserDto?> UpdateAsync(int id, AdminUserDto dto);
     }
 }

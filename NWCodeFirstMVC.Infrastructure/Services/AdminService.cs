@@ -58,8 +58,24 @@ namespace NWCodeFirstMVC.Infrastructure.Services
                 Username = e.Username,
                 Firstname = e.Firstname,
                 Occupation = e.Occupation,
+                Admin = e.Admin,
             };
         }
+        public async Task<AdminUserDto?> UpdateAsync(int id, AdminUserDto dto)
+        {
+            var entity = await _dc.Users.FirstOrDefaultAsync(x => x.Pkid == id);
+            if (entity == null) return null;
 
+            entity.Username = dto.Username;
+            entity.Firstname = dto.Firstname;
+            entity.Occupation = dto.Occupation ?? string.Empty;
+            entity.Admin = dto.Admin;          // the field that wasn't saving
+            // Password is NOT touched: Google handles login.
+
+            await _dc.SaveChangesAsync();
+
+            dto.Pkid = entity.Pkid;
+            return dto;
+        }
     }
 }
