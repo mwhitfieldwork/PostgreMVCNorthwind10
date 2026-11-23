@@ -45,7 +45,8 @@ namespace NWCodeFirstMVC.Infrastructure.Services
             var token = _tokenService.CreateToken(
                 userDetails.Pkid.ToString(),
                 userDetails.Username,
-                userDetails.Firstname);
+                userDetails.Firstname,
+                userDetails.Admin == true);
 
             return new OkObjectResult(new
             {
@@ -85,7 +86,8 @@ namespace NWCodeFirstMVC.Infrastructure.Services
             var token = _tokenService.CreateToken(
                 userDetails.Pkid.ToString(),
                 userDetails.Username,
-                userDetails.Firstname);
+                userDetails.Firstname,
+                userDetails.Admin == true);
 
             return new OkObjectResult(new
             {
