@@ -9,14 +9,15 @@ namespace NWCodeFirstMVC.Infrastructure.Services
 {
     public class TokenService(IConfiguration config) : ITokenService
     {
-        public string CreateToken(string userId, string email, string? name = null)
+        public string CreateToken(string userId, string email, string? name = null, bool isAdmin = false)
         {
             var key = new SymmetricSecurityKey(Convert.FromBase64String(config["Jwt:Key"]!));
 
             var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId),
-            new(JwtRegisteredClaimNames.Email, email)
+            new(JwtRegisteredClaimNames.Email, email),
+            new("role", isAdmin ? "Admin" : "User")
         };
             if (!string.IsNullOrEmpty(name))
                 claims.Add(new(JwtRegisteredClaimNames.Name, name));
